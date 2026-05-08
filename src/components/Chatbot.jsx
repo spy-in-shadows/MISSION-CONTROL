@@ -42,10 +42,40 @@ function renderMarkdown(text) {
     // Bullet point lines
     const isBullet = line.startsWith('• ') || line.startsWith('- ') || line.startsWith('* ');
     if (isBullet) {
-      return <div key={i} style={{ paddingLeft: 12, marginTop: 2 }}>• {parts.slice(1)}</div>;
+      const bulletText = line.slice(2);
+      return (
+        <div key={i} style={{ paddingLeft: 12, marginTop: 2 }}>
+          • {renderInlineMarkdown(bulletText)}
+        </div>
+      );
     }
     return <div key={i} style={{ marginTop: i > 0 ? 3 : 0 }}>{parts}</div>;
   });
+}
+
+function renderInlineMarkdown(text) {
+  const parts = [];
+  let remaining = text;
+  let key = 0;
+
+  while (remaining.length > 0) {
+    const boldMatch = remaining.match(/^(.*?)\*\*(.+?)\*\*(.*)/s);
+    const italicMatch = remaining.match(/^(.*?)\*(.+?)\*(.*)/s);
+    if (boldMatch && (!italicMatch || boldMatch[1].length <= italicMatch[1].length)) {
+      if (boldMatch[1]) parts.push(<span key={key++}>{boldMatch[1]}</span>);
+      parts.push(<strong key={key++}>{boldMatch[2]}</strong>);
+      remaining = boldMatch[3];
+    } else if (italicMatch) {
+      if (italicMatch[1]) parts.push(<span key={key++}>{italicMatch[1]}</span>);
+      parts.push(<em key={key++}>{italicMatch[2]}</em>);
+      remaining = italicMatch[3];
+    } else {
+      parts.push(<span key={key++}>{remaining}</span>);
+      remaining = '';
+    }
+  }
+
+  return parts;
 }
 
 function buildSystemPrompt(dashboardData) {
